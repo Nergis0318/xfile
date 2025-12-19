@@ -8,8 +8,10 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -170,7 +172,10 @@ func uploadFile(filePath, apiEndpoint, apiKey string, verbose bool) (string, err
 		// If JSON parsing fails, try to extract URL from plain text response
 		// Some APIs might return just the URL as plain text
 		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
-			return string(body), nil
+			if verbose {
+				fmt.Fprintf(os.Stderr, "Warning: Received non-JSON response, treating as plain text URL\n")
+			}
+			return strings.TrimSpace(string(body)), nil
 		}
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
@@ -182,12 +187,23 @@ func uploadFile(filePath, apiEndpoint, apiKey string, verbose bool) (string, err
 
 	// If URL is not in the response, try to construct it from path/key
 	if uploadResp.Path != "" {
-		return fmt.Sprintf("%s/%s", apiEndpoint, uploadResp.Path), nil
+		return joinURL(apiEndpoint, uploadResp.Path), nil
 	}
 
 	if uploadResp.Key != "" {
-		return fmt.Sprintf("%s/%s", apiEndpoint, uploadResp.Key), nil
+		return joinURL(apiEndpoint, uploadResp.Key), nil
 	}
 
 	return "", fmt.Errorf("no URL in response")
+}
+
+// joinURL safely joins a base URL with a path, handling trailing/leading slashes
+func joinURL(base, path string) string {
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		// Fallback to simple concatenation if URL parsing fails
+		return strings.TrimRight(base, "/") + "/" + strings.TrimLeft(path, "/")
+	}
+	baseURL.Path = strings.TrimRight(baseURL.Path, "/") + "/" + strings.TrimLeft(path, "/")
+	return baseURL.String()
 }
