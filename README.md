@@ -1,118 +1,52 @@
 # staticup
 
-A simple CLI tool for uploading files to static file hosting services.
+정적 파일 호스팅 서비스에 파일을 업로드하기 위한 간단한 CLI 도구입니다.
 
-## Installation
+## 사용법
 
-### From Source
+### 기본 업로드
 
-```bash
-go install github.com/DevNergis/staticup@latest
-```
-
-Or clone and build:
-
-```bash
-git clone https://github.com/DevNergis/staticup.git
-cd staticup
-make build
-```
-
-Or use Go directly:
-
-```bash
-git clone https://github.com/DevNergis/staticup.git
-cd staticup
-go build -o staticup
-```
-
-### Using Make
-
-The project includes a Makefile for common tasks:
-
-```bash
-make help    # Show available commands
-make build   # Build the binary
-make install # Install to /usr/local/bin (requires sudo)
-make clean   # Remove built binary
-make fmt     # Format the code
-make vet     # Run go vet
-```
-
-## Usage
-
-### Basic Upload
-
-Upload a file directly:
+파일을 직접 업로드:
 
 ```bash
 staticup /path/to/your/file.txt
 ```
 
-Or using the `--file` flag:
+또는 `--file` 플래그 사용:
 
 ```bash
 staticup --file /path/to/your/file.txt
 ```
 
-### Custom API Endpoint
+## 명령줄 옵션
 
-Specify a custom API endpoint:
+- `<file-path>` (위치 인자): 업로드할 파일의 경로
+- `--file`: 업로드할 파일의 경로 (위치 인자 대신 사용 가능)
+- `--verbose`: 상세 출력 활성화
+- `--version`: 버전 정보 표시
 
-```bash
-staticup /path/to/your/file.txt --api https://your-api.example.com
-```
-
-### With Authentication
-
-If the API requires authentication:
+## 예제
 
 ```bash
-staticup /path/to/your/file.txt --key YOUR_API_KEY
-```
-
-### Verbose Output
-
-Enable verbose logging to see detailed information:
-
-```bash
-staticup /path/to/your/file.txt --verbose
-```
-
-## Command-Line Options
-
-- `<file-path>` (positional): Path to the file to upload
-- `--file`: Path to the file to upload (alternative to positional argument)
-- `--api`: API endpoint URL (default: https://static.a85labs.net)
-- `--key`: API key for authentication (optional)
-- `--verbose`: Enable verbose output
-- `--version`: Show version information
-
-## Examples
-
-```bash
-# Upload an image (positional argument)
+# 이미지 업로드 (위치 인자)
 staticup photo.jpg
 
-# Upload with verbose output
+# 상세 출력과 함께 업로드
 staticup document.pdf --verbose
 
-# Upload to custom endpoint with API key
-staticup data.json --api https://custom-static.example.com --key abc123
-
-# Check version
+# 버전 확인
 staticup --version
 ```
 
 ## API
 
-This tool is designed to work with the API at https://static.a85labs.net/openapi.json
+이 도구는 https://static.a85labs.net/docs 에 있는 API와 함께 작동하도록 설계되었습니다.
 
-The tool expects the API to:
-- Accept POST requests to `/upload` endpoint
-- Support multipart/form-data file uploads
-- Return a JSON response with the uploaded file URL
+이 도구는 API가 다음을 수행할 것으로 예상합니다:
+- `/upload` 엔드포인트로 POST 요청 수락
+- multipart/form-data 파일 업로드 지원
+- 업로드된 파일 URL이 포함된 JSON 응답 반환
 
-## License
+## 라이선스
 
 AGPL-3.0
