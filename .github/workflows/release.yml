@@ -1,0 +1,66 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - latest
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.11'
+
+      - name: Build binaries
+        run: |
+          platforms=(
+            "linux/amd64"
+            "linux/arm64"
+            "windows/amd64"
+            "windows/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+          )
+
+          mkdir dist
+
+          for platform in "${platforms[@]}"; do
+            IFS="/" read -r -a arr <<< "$platform"
+            GOOS="${arr[0]}"
+            GOARCH="${arr[1]}"
+            
+            # 파일명에 사용할 OS 이름 (darwin -> macos)
+            OS_NAME=$GOOS
+            if [ "$GOOS" = "darwin" ]; then
+              OS_NAME="macos"
+            fi
+
+            output_name="staticup-${OS_NAME}-${GOARCH}"
+            
+            if [ "$GOOS" = "windows" ]; then
+              output_name+=".exe"
+            fi
+
+            echo "Building for $GOOS/$GOARCH..."
+            env GOOS=$GOOS GOARCH=$GOARCH go build -o "dist/$output_name" .
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.sha }}
+          name: Release ${{ github.sha }}
+          files: dist/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

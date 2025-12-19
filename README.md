@@ -43,10 +43,16 @@ make vet     # Run go vet
 
 ### Basic Upload
 
-Upload a file to the default API endpoint:
+Upload a file directly:
 
 ```bash
-staticup -file /path/to/your/file.txt
+staticup /path/to/your/file.txt
+```
+
+Or using the `--file` flag:
+
+```bash
+staticup --file /path/to/your/file.txt
 ```
 
 ### Custom API Endpoint
@@ -54,7 +60,7 @@ staticup -file /path/to/your/file.txt
 Specify a custom API endpoint:
 
 ```bash
-staticup -file /path/to/your/file.txt -api https://your-api.example.com
+staticup /path/to/your/file.txt --api https://your-api.example.com
 ```
 
 ### With Authentication
@@ -62,7 +68,7 @@ staticup -file /path/to/your/file.txt -api https://your-api.example.com
 If the API requires authentication:
 
 ```bash
-staticup -file /path/to/your/file.txt -key YOUR_API_KEY
+staticup /path/to/your/file.txt --key YOUR_API_KEY
 ```
 
 ### Verbose Output
@@ -70,31 +76,32 @@ staticup -file /path/to/your/file.txt -key YOUR_API_KEY
 Enable verbose logging to see detailed information:
 
 ```bash
-staticup -file /path/to/your/file.txt -verbose
+staticup /path/to/your/file.txt --verbose
 ```
 
 ## Command-Line Options
 
-- `-file` (required): Path to the file to upload
-- `-api`: API endpoint URL (default: https://static.a85labs.net)
-- `-key`: API key for authentication (optional)
-- `-verbose`: Enable verbose output
-- `-version`: Show version information
+- `<file-path>` (positional): Path to the file to upload
+- `--file`: Path to the file to upload (alternative to positional argument)
+- `--api`: API endpoint URL (default: https://static.a85labs.net)
+- `--key`: API key for authentication (optional)
+- `--verbose`: Enable verbose output
+- `--version`: Show version information
 
 ## Examples
 
 ```bash
-# Upload an image
-staticup -file photo.jpg
+# Upload an image (positional argument)
+staticup photo.jpg
 
 # Upload with verbose output
-staticup -file document.pdf -verbose
+staticup document.pdf --verbose
 
 # Upload to custom endpoint with API key
-staticup -file data.json -api https://custom-static.example.com -key abc123
+staticup data.json --api https://custom-static.example.com --key abc123
 
 # Check version
-staticup -version
+staticup --version
 ```
 
 ## API

@@ -13,6 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/mdp/qrterminal/v3"
+	"github.com/schollz/progressbar/v3"
 )
 
 const (
@@ -32,10 +35,17 @@ type UploadResponse struct {
 func main() {
 	// Define command-line flags
 	filePath := flag.String("file", "", "Path to the file to upload (required)")
-	apiEndpoint := flag.String("api", defaultAPIEndpoint, "API endpoint URL")
-	apiKey := flag.String("key", "", "API key for authentication (if required)")
 	verbose := flag.Bool("verbose", false, "Enable verbose output")
 	showVersion := flag.Bool("version", false, "Show version information")
+	showQR := flag.Bool("qr", true, "Show QR code for the uploaded file URL")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s [options] <file-path>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s --file <file-path> [options]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 
@@ -45,9 +55,15 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Support positional argument for file path if -file flag is not provided
+	if *filePath == "" && flag.NArg() > 0 {
+		*filePath = flag.Arg(0)
+	}
+
 	// Validate required flags
 	if *filePath == "" {
-		fmt.Fprintf(os.Stderr, "Error: -file flag is required\n\n")
+		fmt.Fprintf(os.Stderr, "Error: file path is required\n")
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] <file-path> or %s --file <file-path>\n", os.Args[0], os.Args[0])
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -67,18 +83,34 @@ func main() {
 	if *verbose {
 		fmt.Printf("Uploading file: %s\n", *filePath)
 		fmt.Printf("File size: %d bytes\n", fileInfo.Size())
-		fmt.Printf("API endpoint: %s\n", *apiEndpoint)
+		fmt.Printf("API endpoint: %s\n", defaultAPIEndpoint)
 	}
 
 	// Upload the file
-	url, err := uploadFile(*filePath, *apiEndpoint, *apiKey, *verbose)
+	url, err := uploadFile(*filePath, defaultAPIEndpoint, "", *verbose)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error uploading file: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Print success message
+	fmt.Printf("\n")
 	fmt.Printf("✓ File uploaded successfully!\n")
+
+	// Show QR code if requested
+	if *showQR {
+		fmt.Println("\nQR Code:")
+		config := qrterminal.Config{
+			Level:     qrterminal.H,
+			Writer:    os.Stdout,
+			BlackChar: qrterminal.BLACK,
+			WhiteChar: qrterminal.WHITE,
+			QuietZone: 1,
+		}
+		qrterminal.GenerateWithConfig(url, config)
+	}
+
+	fmt.Printf("\n")
 	fmt.Printf("URL: %s\n", url)
 }
 
@@ -122,11 +154,18 @@ func uploadFile(filePath, apiEndpoint, apiKey string, verbose bool) (string, err
 		fmt.Printf("Sending request to: %s\n", uploadURL)
 	}
 
+	// Create progress bar
+	bar := progressbar.DefaultBytes(
+		int64(requestBody.Len()),
+		"uploading",
+	)
+
 	// Create HTTP request
-	req, err := http.NewRequest("POST", uploadURL, &requestBody)
+	req, err := http.NewRequest("POST", uploadURL, io.TeeReader(&requestBody, bar))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
+	req.ContentLength = int64(requestBody.Len())
 
 	// Set headers
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -175,14 +214,21 @@ func uploadFile(filePath, apiEndpoint, apiKey string, verbose bool) (string, err
 			if verbose {
 				fmt.Fprintf(os.Stderr, "Warning: Received non-JSON response, treating as plain text URL\n")
 			}
-			return strings.TrimSpace(string(body)), nil
+			plainURL := strings.TrimSpace(string(body))
+			if strings.HasPrefix(plainURL, "http") {
+				return plainURL, nil
+			}
+			return joinURL(apiEndpoint, plainURL), nil
 		}
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
 	// Return the URL from the response
 	if uploadResp.URL != "" {
-		return uploadResp.URL, nil
+		if strings.HasPrefix(uploadResp.URL, "http") {
+			return uploadResp.URL, nil
+		}
+		return joinURL(apiEndpoint, uploadResp.URL), nil
 	}
 
 	// If URL is not in the response, try to construct it from path/key
