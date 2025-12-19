@@ -15,7 +15,28 @@ Or clone and build:
 ```bash
 git clone https://github.com/DevNergis/staticup.git
 cd staticup
+make build
+```
+
+Or use Go directly:
+
+```bash
+git clone https://github.com/DevNergis/staticup.git
+cd staticup
 go build -o staticup
+```
+
+### Using Make
+
+The project includes a Makefile for common tasks:
+
+```bash
+make help    # Show available commands
+make build   # Build the binary
+make install # Install to /usr/local/bin (requires sudo)
+make clean   # Remove built binary
+make fmt     # Format the code
+make vet     # Run go vet
 ```
 
 ## Usage
