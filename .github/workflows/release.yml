@@ -54,13 +54,16 @@ jobs:
             env GOOS=$GOOS GOARCH=$GOARCH go build -o "dist/$output_name" .
           done
 
+      - name: Get Short SHA
+        id: short_sha
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.sha }}
-          name: Release ${{ github.sha }}
-          files: dist/*
+          tag: ${{ steps.short_sha.outputs.sha }}
+          name: Release ${{ steps.short_sha.outputs.sha }}
+          artifacts: dist/*
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
