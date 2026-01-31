@@ -97,37 +97,38 @@ func main() {
 	fmt.Printf("\n")
 	fmt.Printf("✓ File uploaded successfully!\n")
 
-    // Try to shorten the uploaded URL using lru.kr API
-    shortURL, err := shortenWithLRU(url, *verbose)
-    if err != nil {
-        if *verbose {
-            fmt.Fprintf(os.Stderr, "Warning: failed to shorten URL: %v\n", err)
-        }
-    }
+	// Try to shorten the uploaded URL using lru.kr API
+	shortURL, err := shortenWithLRU(url, *verbose)
+	if err != nil {
+		if *verbose {
+			fmt.Fprintf(os.Stderr, "Warning: failed to shorten URL: %v\n", err)
+		}
+	}
 
-    // Show QR code for the shortened URL if available, otherwise use original
-    if *showQR {
-        qrTarget := url
-        if shortURL != "" {
-            qrTarget = shortURL
-        }
+	// Show QR code for the shortened URL if available, otherwise use original
+	if *showQR {
+		qrTarget := url
+		if shortURL != "" {
+			qrTarget = shortURL
+		}
 
-        fmt.Println("\nQR Code:")
-        config := qrterminal.Config{
-            Level:     qrterminal.H,
-            Writer:    os.Stdout,
-            BlackChar: qrterminal.BLACK,
-            WhiteChar: qrterminal.WHITE,
-            QuietZone: 1,
-        }
-        qrterminal.GenerateWithConfig(qrTarget, config)
-    }
+		fmt.Println("\nQR Code:")
+		config := qrterminal.Config{
+			Level:     qrterminal.H,
+			Writer:    os.Stdout,
+			BlackChar: qrterminal.BLACK,
+			WhiteChar: qrterminal.WHITE,
+			QuietZone: 1,
+		}
+		qrterminal.GenerateWithConfig(qrTarget, config)
+	}
 
-    fmt.Printf("\n")
-    fmt.Printf("URL: %s\n", url)
-    if shortURL != "" {
-        fmt.Printf("Short URL: %s\n", shortURL)
-    }
+	fmt.Printf("\n")
+	fmt.Printf("URL: %s\n", url)
+	if shortURL != "" {
+		fmt.Printf("\n")
+		fmt.Printf("Short URL: %s\n", shortURL)
+	}
 }
 
 // uploadFile uploads a file to the static file hosting service
@@ -272,149 +273,149 @@ func joinURL(base, path string) string {
 
 // shortenWithLRU calls lru.kr /api/shorten to create a short link for the given URL.
 func shortenWithLRU(orig string, verbose bool) (string, error) {
-    api := "https://lru.kr/api/shorten"
+	api := "https://lru.kr/api/shorten"
 
-    payload := map[string]string{"url": orig}
-    b, err := json.Marshal(payload)
-    if err != nil {
-        return "", err
-    }
+	payload := map[string]string{"url": orig}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
 
-    client := &http.Client{Timeout: 20 * time.Second}
-    req, err := http.NewRequest("POST", api, bytes.NewReader(b))
-    if err != nil {
-        return "", err
-    }
-    req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{Timeout: 20 * time.Second}
+	req, err := http.NewRequest("POST", api, bytes.NewReader(b))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
 
-    if verbose {
-        fmt.Printf("Shorten request to: %s\n", api)
-        fmt.Printf("Request body: %s\n", string(b))
-    }
+	if verbose {
+		fmt.Printf("Shorten request to: %s\n", api)
+		fmt.Printf("Request body: %s\n", string(b))
+	}
 
-    resp, err := client.Do(req)
-    if err != nil {
-        return "", err
-    }
-    defer resp.Body.Close()
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        return "", err
-    }
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 
-    if verbose {
-        fmt.Printf("Shorten response status: %d\n", resp.StatusCode)
-        fmt.Printf("Shorten response body: %s\n", string(body))
-    }
+	if verbose {
+		fmt.Printf("Shorten response status: %d\n", resp.StatusCode)
+		fmt.Printf("Shorten response body: %s\n", string(body))
+	}
 
-    if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-        return "", fmt.Errorf("shorten request failed: %d %s", resp.StatusCode, string(body))
-    }
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("shorten request failed: %d %s", resp.StatusCode, string(body))
+	}
 
-    // Try to parse response as JSON and extract a short URL
-    var data any
-    if err := json.Unmarshal(body, &data); err != nil {
-        // fallback: if body is plain text URL
-        s := strings.TrimSpace(string(body))
-        if strings.HasPrefix(s, "http") {
-            return s, nil
-        }
-        return "", fmt.Errorf("failed to parse shorten response: %w", err)
-    }
+	// Try to parse response as JSON and extract a short URL
+	var data any
+	if err := json.Unmarshal(body, &data); err != nil {
+		// fallback: if body is plain text URL
+		s := strings.TrimSpace(string(body))
+		if strings.HasPrefix(s, "http") {
+			return s, nil
+		}
+		return "", fmt.Errorf("failed to parse shorten response: %w", err)
+	}
 
-    // Walk JSON to find a plausible short URL or key
-    if m, ok := data.(map[string]any); ok {
-        // common keys: "short_url", "url", "result", "data", "key", "short_key"
-        if v := findStringURLInMap(m); v != "" {
-            return v, nil
-        }
-    }
+	// Walk JSON to find a plausible short URL or key
+	if m, ok := data.(map[string]any); ok {
+		// common keys: "short_url", "url", "result", "data", "key", "short_key"
+		if v := findStringURLInMap(m); v != "" {
+			return v, nil
+		}
+	}
 
-    // try to find any string in nested structures that looks like a short path or url
-    var found string
-    var walk func(any)
-    walk = func(x any) {
-        if found != "" {
-            return
-        }
-        switch v := x.(type) {
-        case string:
-            s := strings.TrimSpace(v)
-            if strings.HasPrefix(s, "http") {
-                found = s
-                return
-            }
-            // short key (alphanumeric, length 2-20)
-            if len(s) >= 2 && len(s) <= 20 && !strings.ContainsAny(s, " \n\r\t") {
-                // assume it's a key
-                found = joinURL("https://lru.kr", s)
-                return
-            }
-        case map[string]any:
-            for _, vv := range v {
-                walk(vv)
-                if found != "" {
-                    return
-                }
-            }
-        case []any:
-            for _, vv := range v {
-                walk(vv)
-                if found != "" {
-                    return
-                }
-            }
-        }
-    }
-    walk(data)
-    if found != "" {
-        return found, nil
-    }
+	// try to find any string in nested structures that looks like a short path or url
+	var found string
+	var walk func(any)
+	walk = func(x any) {
+		if found != "" {
+			return
+		}
+		switch v := x.(type) {
+		case string:
+			s := strings.TrimSpace(v)
+			if strings.HasPrefix(s, "http") {
+				found = s
+				return
+			}
+			// short key (alphanumeric, length 2-20)
+			if len(s) >= 2 && len(s) <= 20 && !strings.ContainsAny(s, " \n\r\t") {
+				// assume it's a key
+				found = joinURL("https://lru.kr", s)
+				return
+			}
+		case map[string]any:
+			for _, vv := range v {
+				walk(vv)
+				if found != "" {
+					return
+				}
+			}
+		case []any:
+			for _, vv := range v {
+				walk(vv)
+				if found != "" {
+					return
+				}
+			}
+		}
+	}
+	walk(data)
+	if found != "" {
+		return found, nil
+	}
 
-    return "", fmt.Errorf("no short url found in response")
+	return "", fmt.Errorf("no short url found in response")
 }
 
 func findStringURLInMap(m map[string]any) string {
-    // prefer obvious full URLs
-    for k, v := range m {
-        lk := strings.ToLower(k)
-        if s, ok := v.(string); ok {
-            if strings.HasPrefix(s, "http") {
-                return s
-            }
-            if lk == "short_url" || lk == "shortlink" || lk == "short" || lk == "url" {
-                // url field might be a path
-                if strings.HasPrefix(s, "http") {
-                    return s
-                }
-                return joinURL("https://lru.kr", s)
-            }
-        }
-    }
-    // check nested maps for keys like key/short_key
-    for k, v := range m {
-        if vv, ok := v.(map[string]any); ok {
-            if s := findStringURLInMap(vv); s != "" {
-                return s
-            }
-        } else if arr, ok := v.([]any); ok {
-            for _, item := range arr {
-                if im, ok := item.(map[string]any); ok {
-                    if s := findStringURLInMap(im); s != "" {
-                        return s
-                    }
-                }
-            }
-        } else if ks, ok := v.(string); ok {
-            lk := strings.ToLower(k)
-            if lk == "key" || lk == "short_key" || lk == "id" {
-                if strings.HasPrefix(ks, "http") {
-                    return ks
-                }
-                return joinURL("https://lru.kr", ks)
-            }
-        }
-    }
-    return ""
+	// prefer obvious full URLs
+	for k, v := range m {
+		lk := strings.ToLower(k)
+		if s, ok := v.(string); ok {
+			if strings.HasPrefix(s, "http") {
+				return s
+			}
+			if lk == "short_url" || lk == "shortlink" || lk == "short" || lk == "url" {
+				// url field might be a path
+				if strings.HasPrefix(s, "http") {
+					return s
+				}
+				return joinURL("https://lru.kr", s)
+			}
+		}
+	}
+	// check nested maps for keys like key/short_key
+	for k, v := range m {
+		if vv, ok := v.(map[string]any); ok {
+			if s := findStringURLInMap(vv); s != "" {
+				return s
+			}
+		} else if arr, ok := v.([]any); ok {
+			for _, item := range arr {
+				if im, ok := item.(map[string]any); ok {
+					if s := findStringURLInMap(im); s != "" {
+						return s
+					}
+				}
+			}
+		} else if ks, ok := v.(string); ok {
+			lk := strings.ToLower(k)
+			if lk == "key" || lk == "short_key" || lk == "id" {
+				if strings.HasPrefix(ks, "http") {
+					return ks
+				}
+				return joinURL("https://lru.kr", ks)
+			}
+		}
+	}
+	return ""
 }
