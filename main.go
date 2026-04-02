@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultAPIEndpoint = "https://static.a85labs.net"
+	defaultAPIEndpoint = "https://file.xeon.kr"
 	version            = "1.0.0"
 )
 
