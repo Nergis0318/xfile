@@ -20,7 +20,7 @@ import (
 
 const (
 	defaultAPIEndpoint = "https://file.xeon.kr"
-	version            = "1.0.0"
+	version            = "1.1.0"
 )
 
 // UploadResponse represents the response from the upload API
