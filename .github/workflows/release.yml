@@ -44,7 +44,7 @@ jobs:
               OS_NAME="macos"
             fi
 
-            output_name="staticup-${OS_NAME}-${GOARCH}"
+            output_name="xfile-${OS_NAME}-${GOARCH}"
             
             if [ "$GOOS" = "windows" ]; then
               output_name+=".exe"

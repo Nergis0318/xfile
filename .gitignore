@@ -32,7 +32,7 @@ go.work.sum
 # .vscode/
 
 # Built binary
-staticup
+xfile
 
 # Test files
 test.txt

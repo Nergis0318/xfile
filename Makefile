@@ -1,7 +1,7 @@
 .PHONY: build install clean test help
 
 # Variables
-BINARY_NAME=staticup
+BINARY_NAME=xfile
 GO=go
 INSTALL_PATH=/usr/local/bin
 

@@ -51,7 +51,7 @@ func main() {
 
 	// Show version and exit
 	if *showVersion {
-		fmt.Printf("staticup version %s\n", version)
+		fmt.Printf("xfile version %s\n", version)
 		os.Exit(0)
 	}
 

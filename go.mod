@@ -1,4 +1,4 @@
-module github.com/DevNergis/staticup
+module github.com/DevNergis/xfile
 
 go 1.24.11
 

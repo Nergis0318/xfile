@@ -1,4 +1,4 @@
-# staticup
+# xfile
 
 정적 파일 호스팅 서비스에 파일을 업로드하기 위한 간단한 CLI 도구입니다.
 
@@ -9,13 +9,13 @@
 파일을 직접 업로드:
 
 ```bash
-staticup /path/to/your/file.txt
+xfile /path/to/your/file.txt
 ```
 
 또는 `--file` 플래그 사용:
 
 ```bash
-staticup --file /path/to/your/file.txt
+xfile --file /path/to/your/file.txt
 ```
 
 ## 명령줄 옵션
@@ -29,13 +29,13 @@ staticup --file /path/to/your/file.txt
 
 ```bash
 # 이미지 업로드 (위치 인자)
-staticup photo.jpg
+xfile photo.jpg
 
 # 상세 출력과 함께 업로드
-staticup document.pdf --verbose
+xfile document.pdf --verbose
 
 # 버전 확인
-staticup --version
+xfile --version
 ```
 
 ## API
