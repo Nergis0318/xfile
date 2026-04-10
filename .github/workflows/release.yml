@@ -1,9 +1,9 @@
 name: Build and Release
 
 on:
-  push:
-    branches:
-      - latest
+  release:
+    types:
+      - created
 
 permissions:
   contents: write
@@ -54,16 +54,12 @@ jobs:
             env GOOS=$GOOS GOARCH=$GOARCH go build -o "dist/$output_name" .
           done
 
-      - name: Get Short SHA
-        id: short_sha
-        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Create Release
+      - name: Upload release artifacts
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ steps.short_sha.outputs.sha }}
-          name: Release ${{ steps.short_sha.outputs.sha }}
+          allowUpdates: true
+          tag: ${{ github.event.release.tag_name }}
           artifacts: dist/*
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.release.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
